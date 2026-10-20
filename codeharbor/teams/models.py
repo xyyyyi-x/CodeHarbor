@@ -4,6 +4,8 @@
 # 简历模版：jianli.xiaolinnote.com
 from __future__ import annotations
 
+from codeharbor.branding import DATA_DIR_NAME
+
 import json
 import re
 from dataclasses import asdict, dataclass, field
@@ -153,7 +155,7 @@ def teams_base_dir() -> Path:
     放在用户主目录而不是项目目录下，因为窗格队员是独立进程、工作目录可能被
     worktree 换掉，用主目录才能保证队员进程和 Lead 找到同一份团队配置。
     """
-    return Path.home() / ".mewcode" / "teams"
+    return Path.home() / DATA_DIR_NAME / "teams"
 
 
 def resolve_team_dir(team_name: str) -> Path:

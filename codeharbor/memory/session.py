@@ -4,6 +4,8 @@
 # 简历模版：jianli.xiaolinnote.com
 from __future__ import annotations
 
+from codeharbor.branding import DATA_DIR_NAME
+
 import json
 import random
 import string
@@ -14,7 +16,7 @@ from typing import IO, Any
 
 from codeharbor.conversation import ConversationManager, Message, ToolResultBlock, ToolUseBlock
 
-SESSIONS_DIR = ".mewcode/sessions"
+SESSIONS_DIR = f"{DATA_DIR_NAME}/sessions"
 DEFAULT_MAX_AGE_DAYS = 30
 TITLE_MAX_LENGTH = 50
 

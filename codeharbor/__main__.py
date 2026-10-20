@@ -5,6 +5,8 @@
 
 from __future__ import annotations
 
+from codeharbor.branding import DATA_DIR_NAME, PRODUCT_CLI, PRODUCT_NAME
+
 import argparse
 import asyncio
 import json
@@ -16,10 +18,13 @@ from pathlib import Path
 
 from codeharbor.config import ConfigError, load_config
 from codeharbor.hooks import HookConfigError, HookEngine, load_hooks
+from codeharbor.migration import migrate_legacy_data_locations
 from codeharbor.permissions import PermissionMode
 
 
 def main() -> None:
+    migrate_legacy_data_locations(Path.cwd(), Path.home())
+
     # 队友 worker 模式：由 tmux/iTerm2 窗格用 `-m codeharbor --teammate ...` 拉起。
     # 必须在 argparse 之前拦截，走独立的 worker 分支而不是正常 TUI。
     teammate = _parse_teammate_flags(sys.argv[1:])
@@ -27,16 +32,20 @@ def main() -> None:
         asyncio.run(_run_teammate(*teammate))
         return
 
-    # 先确保 .mewcode/ 目录存在，否则下面写 debug.log 会因目录不存在而崩溃
-    Path(".mewcode").mkdir(parents=True, exist_ok=True)
+    # 先确保数据目录存在，否则下面写 debug.log 会因目录不存在而崩溃。
+    data_dir = Path(DATA_DIR_NAME)
+    data_dir.mkdir(parents=True, exist_ok=True)
     logging.basicConfig(
         level=logging.INFO,
         format="%(asctime)s %(name)s %(message)s",
-        filename=".mewcode/debug.log",
+        filename=str(data_dir / "debug.log"),
         filemode="w",
     )
 
-    parser = argparse.ArgumentParser(prog="mewcode", description="MewCode AI coding assistant")
+    parser = argparse.ArgumentParser(
+        prog=PRODUCT_CLI,
+        description=f"{PRODUCT_NAME} AI coding assistant",
+    )
     parser.add_argument(
         "--mode",
         choices=[m.value for m in PermissionMode],
@@ -173,9 +182,9 @@ async def _run_prompt(config, permission_mode, hook_engine, prompt: str, output_
         detector=DangerousCommandDetector(),
         sandbox=PathSandbox(work_dir),
         rule_engine=RuleEngine(
-            user_rules_path=home / ".mewcode" / "permissions.yaml",
-            project_rules_path=Path(work_dir) / ".mewcode" / "permissions.yaml",
-            local_rules_path=Path(work_dir) / ".mewcode" / "permissions.local.yaml",
+            user_rules_path=home / DATA_DIR_NAME / "permissions.yaml",
+            project_rules_path=Path(work_dir) / DATA_DIR_NAME / "permissions.yaml",
+            local_rules_path=Path(work_dir) / DATA_DIR_NAME / "permissions.local.yaml",
         ),
         mode=permission_mode,
     )

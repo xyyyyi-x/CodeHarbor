@@ -4,6 +4,8 @@
 # 简历模版：jianli.xiaolinnote.com
 from __future__ import annotations
 
+from codeharbor.branding import DATA_DIR_NAME
+
 import json
 from abc import ABC, abstractmethod
 from typing import Any, AsyncIterator
@@ -136,7 +138,7 @@ class AnthropicClient(LLMClient):
         if not api_key:
             raise AuthenticationError(
                 "Anthropic API key not found. "
-                "Set it in .mewcode/config.yaml or via ANTHROPIC_API_KEY env var."
+                f"Set it in {DATA_DIR_NAME}/config.yaml or via ANTHROPIC_API_KEY env var."
             )
         self._client = AsyncAnthropic(api_key=api_key, base_url=config.base_url)
 
@@ -333,7 +335,7 @@ class OpenAIClient(LLMClient):
         if not api_key:
             raise AuthenticationError(
                 "OpenAI API key not found. "
-                "Set it in .mewcode/config.yaml or via OPENAI_API_KEY env var."
+                f"Set it in {DATA_DIR_NAME}/config.yaml or via OPENAI_API_KEY env var."
             )
         self._client = AsyncOpenAI(api_key=api_key, base_url=config.base_url)
 
@@ -466,7 +468,7 @@ class OpenAICompatClient(LLMClient):
         if not api_key:
             raise AuthenticationError(
                 "OpenAI-compatible API key not found. "
-                "Set it in .mewcode/config.yaml or via OPENAI_API_KEY env var."
+                f"Set it in {DATA_DIR_NAME}/config.yaml or via OPENAI_API_KEY env var."
             )
         self._client = AsyncOpenAI(api_key=api_key, base_url=config.base_url)
 

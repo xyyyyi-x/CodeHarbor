@@ -4,6 +4,8 @@
 # 简历模版：jianli.xiaolinnote.com
 from __future__ import annotations
 
+from codeharbor.branding import DATA_DIR_NAME
+
 import os
 from dataclasses import dataclass, field
 from typing import Any
@@ -155,7 +157,7 @@ class PermissionChecker:
 
     def _is_plan_file(self, target_path: str) -> bool:
         if not self.plan_file_path or not target_path:
-            return ".mewcode/plans/" in target_path
+            return f"{DATA_DIR_NAME}/plans/" in target_path
         try:
             abs_target = os.path.abspath(target_path)
             abs_plan = os.path.abspath(self.plan_file_path)
@@ -165,4 +167,4 @@ class PermissionChecker:
             pass
         if os.path.basename(target_path) == os.path.basename(self.plan_file_path):
             return True
-        return ".mewcode/plans/" in target_path
+        return f"{DATA_DIR_NAME}/plans/" in target_path

@@ -3,7 +3,7 @@
 # Agent网站：xiaolinnote.com
 # 简历模版：jianli.xiaolinnote.com
 
-"""从 .mewcode/commands/ 目录加载自定义 Markdown 命令。
+"""从 .codeharbor/commands/ 目录加载自定义 Markdown 命令。
 
 每个 .md 文件对应一个 prompt 类型命令，文件名（去掉后缀、小写化）即命令名。
 支持可选的 YAML frontmatter（description / argument-hint / aliases）。
@@ -11,6 +11,8 @@
 """
 
 from __future__ import annotations
+
+from codeharbor.branding import DATA_DIR_NAME
 
 import logging
 import os
@@ -135,13 +137,13 @@ def load_user_commands(work_dir: str) -> list[Command]:
     """从用户全局和项目级目录合并加载自定义命令。
 
     搜索路径（后者覆盖前者）：
-      1. ~/.mewcode/commands/
-      2. <work_dir>/.mewcode/commands/
+      1. ~/.codeharbor/commands/
+      2. <work_dir>/.codeharbor/commands/
     """
     dirs: list[str] = []
     home = Path.home()
-    dirs.append(str(home / ".mewcode" / "commands"))
-    dirs.append(str(Path(work_dir) / ".mewcode" / "commands"))
+    dirs.append(str(home / DATA_DIR_NAME / "commands"))
+    dirs.append(str(Path(work_dir) / DATA_DIR_NAME / "commands"))
 
     merged: dict[str, Command] = {}
     order: list[str] = []

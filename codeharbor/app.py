@@ -4,6 +4,8 @@
 # 简历模版：jianli.xiaolinnote.com
 from __future__ import annotations
 
+from codeharbor.branding import DATA_DIR_NAME
+
 import asyncio
 import os
 import random
@@ -99,7 +101,7 @@ MAX_AT_REF_BYTES = 10240
 
 _AT_REF_RE = re.compile(r"@([\w./_\-]+(?:\.[\w]+)*)")
 
-_SKIP_DIRS = {".git", "node_modules", ".venv", "__pycache__", ".mewcode", "build", ".gradle"}
+_SKIP_DIRS = {".git", "node_modules", ".venv", "__pycache__", DATA_DIR_NAME, "build", ".gradle"}
 
 
 def scan_files_for_at(prefix: str, work_dir: str, limit: int = 10) -> list[str]:
@@ -168,7 +170,7 @@ class ChatInput(TextArea):
         self._history_file: Path | None = None
 
     def load_history(self, work_dir: str) -> None:
-        self._history_file = Path(work_dir) / ".mewcode" / "history"
+        self._history_file = Path(work_dir) / DATA_DIR_NAME / "history"
         if self._history_file.exists():
             try:
                 lines = self._history_file.read_text(encoding="utf-8").splitlines()
@@ -720,9 +722,9 @@ class MewCodeApp(App):
             detector=DangerousCommandDetector(),
             sandbox=PathSandbox(work_dir),
             rule_engine=RuleEngine(
-                user_rules_path=home / ".mewcode" / "permissions.yaml",
-                project_rules_path=Path(work_dir) / ".mewcode" / "permissions.yaml",
-                local_rules_path=Path(work_dir) / ".mewcode" / "permissions.local.yaml",
+                user_rules_path=home / DATA_DIR_NAME / "permissions.yaml",
+                project_rules_path=Path(work_dir) / DATA_DIR_NAME / "permissions.yaml",
+                local_rules_path=Path(work_dir) / DATA_DIR_NAME / "permissions.local.yaml",
             ),
             mode=self._initial_permission_mode,
             sandbox_enabled=sandbox_auto_allow,
@@ -736,8 +738,8 @@ class MewCodeApp(App):
                 sandbox_config = SandboxConfig(
                     allow_write=[work_dir, "/tmp"],
                     deny_write=[
-                        f"{work_dir}/.mewcode/config.yaml",
-                        f"{work_dir}/.mewcode/permissions.local.yaml",
+                        f"{work_dir}/{DATA_DIR_NAME}/config.yaml",
+                        f"{work_dir}/{DATA_DIR_NAME}/permissions.local.yaml",
                     ],
                     network_enabled=self._sandbox_cfg.network_enabled,
                 )

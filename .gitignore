@@ -8,6 +8,7 @@ build/
 .idea/
 .vscode/
 .mewcode/
+.codeharbor/
 .claude/
 CLAUDE.md
 

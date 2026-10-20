@@ -175,7 +175,7 @@ class TestModels:
         with patch("codeharbor.teams.models.Path.home", return_value=Path(tmp_dir)):
             name1 = unique_team_name("my-team")
             assert name1 == "my-team"
-            (Path(tmp_dir) / ".mewcode" / "teams" / "my-team").mkdir(parents=True)
+            (Path(tmp_dir) / ".codeharbor" / "teams" / "my-team").mkdir(parents=True)
             name2 = unique_team_name("my-team")
             assert name2 == "my-team-2"
 

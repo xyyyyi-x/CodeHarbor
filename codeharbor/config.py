@@ -4,6 +4,8 @@
 # 简历模版：jianli.xiaolinnote.com
 from __future__ import annotations
 
+from codeharbor.branding import DATA_DIR_NAME
+
 import os
 import re
 from dataclasses import dataclass, field
@@ -256,9 +258,9 @@ def load_config(path: Path | None = None) -> AppConfig:
     cwd = Path.cwd()
     home = Path.home()
     candidates = [
-        home / ".mewcode" / "config.yaml",
-        cwd / ".mewcode" / "config.yaml",
-        cwd / ".mewcode" / "config.local.yaml",
+        home / DATA_DIR_NAME / "config.yaml",
+        cwd / DATA_DIR_NAME / "config.yaml",
+        cwd / DATA_DIR_NAME / "config.local.yaml",
     ]
 
     merged: AppConfig | None = None
@@ -273,7 +275,7 @@ def load_config(path: Path | None = None) -> AppConfig:
 
     if merged is None:
         raise ConfigError(
-            "No config file found. Expected .mewcode/config.yaml "
-            "in project or ~/.mewcode/config.yaml"
+            f"No config file found. Expected {DATA_DIR_NAME}/config.yaml "
+            f"in project or ~/{DATA_DIR_NAME}/config.yaml"
         )
     return merged

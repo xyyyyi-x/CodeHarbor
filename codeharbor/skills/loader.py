@@ -4,6 +4,8 @@
 # 简历模版：jianli.xiaolinnote.com
 from __future__ import annotations
 
+from codeharbor.branding import DATA_DIR_NAME
+
 import logging
 import os
 from pathlib import Path
@@ -19,8 +21,8 @@ from codeharbor.skills.parser import (
 
 log = logging.getLogger(__name__)
 
-PROJECT_SKILLS_DIR = ".mewcode/skills"
-USER_SKILLS_DIR = "~/.mewcode/skills"
+PROJECT_SKILLS_DIR = f"{DATA_DIR_NAME}/skills"
+USER_SKILLS_DIR = f"~/{DATA_DIR_NAME}/skills"
 
 
 class SkillLoader:

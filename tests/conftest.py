@@ -13,7 +13,7 @@ import pytest
 def isolate_teams_dir(tmp_path):
     """把团队根目录指到临时目录，让团队配置落在测试自己的沙箱里。
 
-    团队目录是 <home>/.mewcode/teams，不重定向的话跑一次测试就会在真实主目录里
+    团队目录是 <home>/.codeharbor/teams，不重定向的话跑一次测试就会在真实主目录里
     留下一堆 squad、squad-2 这样的残留，下一次跑还会撞上「团队已存在」。
 
     只替换 teams.models 里的 Path.home，不动全局：memory 等模块同样按主目录

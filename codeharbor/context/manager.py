@@ -4,6 +4,8 @@
 # 简历模版：jianli.xiaolinnote.com
 from __future__ import annotations
 
+from codeharbor.branding import DATA_DIR_NAME
+
 import json
 import os
 import shutil
@@ -84,10 +86,10 @@ class CompactEvent:
 # ---------------------------------------------------------------------------
 
 def spill_dir(work_dir: str, session_id: str = "") -> Path:
-    """溢写目录：按会话隔离在 .mewcode/sessions/<会话id>/tool-results 下，
+    """溢写目录：按会话隔离在 .codeharbor/sessions/<会话id>/tool-results 下，
     会话 id 为空（一次性调用、测试）时落到 default。"""
     sid = session_id or "default"
-    return Path(work_dir) / ".mewcode" / "sessions" / sid / "tool-results"
+    return Path(work_dir) / DATA_DIR_NAME / "sessions" / sid / "tool-results"
 
 
 def ensure_session_dir(work_dir: str, session_id: str = "") -> Path:

@@ -5,6 +5,8 @@
 
 from __future__ import annotations
 
+from codeharbor.branding import DATA_DIR_NAME
+
 import hashlib
 import os
 import threading
@@ -33,7 +35,7 @@ class Snapshot:
 class FileHistory:
 
     def __init__(self, base_dir: str, session_id: str) -> None:
-        self._session_dir = Path(base_dir) / ".mewcode" / "file-history" / session_id
+        self._session_dir = Path(base_dir) / DATA_DIR_NAME / "file-history" / session_id
         self._session_dir.mkdir(parents=True, exist_ok=True)
         self._tracked: dict[str, int] = {}
         self._snapshots: list[Snapshot] = []

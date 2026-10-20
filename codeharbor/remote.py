@@ -12,6 +12,8 @@ Remote Control 服务器：通过 WebSocket 桥接 Agent 事件和 Web UI。
 
 from __future__ import annotations
 
+from codeharbor.branding import DATA_DIR_NAME
+
 import asyncio
 import json
 import logging
@@ -232,9 +234,9 @@ class RemoteServer:
             detector=DangerousCommandDetector(),
             sandbox=PathSandbox(work_dir),
             rule_engine=RuleEngine(
-                user_rules_path=home / ".mewcode" / "permissions.yaml",
-                project_rules_path=Path(work_dir) / ".mewcode" / "permissions.yaml",
-                local_rules_path=Path(work_dir) / ".mewcode" / "permissions.local.yaml",
+                user_rules_path=home / DATA_DIR_NAME / "permissions.yaml",
+                project_rules_path=Path(work_dir) / DATA_DIR_NAME / "permissions.yaml",
+                local_rules_path=Path(work_dir) / DATA_DIR_NAME / "permissions.local.yaml",
             ),
             mode=PermissionMode.DEFAULT,
         )

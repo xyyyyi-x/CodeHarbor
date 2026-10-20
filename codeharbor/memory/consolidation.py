@@ -11,6 +11,8 @@
 """
 from __future__ import annotations
 
+from codeharbor.branding import DATA_DIR_NAME
+
 import asyncio
 import logging
 import os
@@ -42,8 +44,8 @@ class MemoryConsolidator:
         min_sessions: int = DEFAULT_MIN_SESSIONS,
     ) -> None:
         self._work_dir = work_dir
-        self._mem_dir = os.path.join(work_dir, ".mewcode", "memory")
-        self._user_mem_dir = os.path.join(Path.home(), ".mewcode", "memory")
+        self._mem_dir = os.path.join(work_dir, DATA_DIR_NAME, "memory")
+        self._user_mem_dir = os.path.join(Path.home(), DATA_DIR_NAME, "memory")
         self._min_hours = min_hours
         self._min_sessions = min_sessions
         self._last_scan_at = 0
@@ -125,7 +127,7 @@ class MemoryConsolidator:
         from codeharbor.tools.read_file import ReadFileTool
         from codeharbor.tools.write_file import WriteFileTool
 
-        transcript_dir = os.path.join(self._work_dir, ".mewcode", "sessions")
+        transcript_dir = os.path.join(self._work_dir, DATA_DIR_NAME, "sessions")
         prompt = _build_consolidation_prompt(
             self._mem_dir, self._user_mem_dir, transcript_dir, session_ids
         )

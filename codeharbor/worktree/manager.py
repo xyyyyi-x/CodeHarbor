@@ -4,6 +4,8 @@
 # 简历模版：jianli.xiaolinnote.com
 from __future__ import annotations
 
+from codeharbor.branding import DATA_DIR_NAME
+
 import asyncio
 import logging
 import os
@@ -42,9 +44,9 @@ class WorktreeManager:
         self.repo_root = repo_root
         self.symlink_directories = symlink_directories or []
         self.worktree_dir = worktree_dir or str(
-            Path(repo_root) / ".mewcode" / "worktrees"
+            Path(repo_root) / DATA_DIR_NAME / "worktrees"
         )
-        self._mewcode_dir = Path(repo_root) / ".mewcode"
+        self._mewcode_dir = Path(repo_root) / DATA_DIR_NAME
         self._lock = asyncio.Lock()
         self.active: dict[str, Worktree] = {}
         self.current_session: WorktreeSession | None = None

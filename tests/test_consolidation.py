@@ -144,7 +144,7 @@ def test_e2e_consolidation_merges_duplicates():
     model = os.environ.get("MEWCODE_TEST_MODEL", "MiniMax-M3")
 
     with tempfile.TemporaryDirectory() as work_dir:
-        mem_dir = os.path.join(work_dir, ".mewcode", "memory")
+        mem_dir = os.path.join(work_dir, ".codeharbor", "memory")
         setup_test_memories(mem_dir)
 
         print("\nBefore consolidation:")

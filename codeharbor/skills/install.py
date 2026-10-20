@@ -4,6 +4,8 @@
 # 简历模版：jianli.xiaolinnote.com
 from __future__ import annotations
 
+from codeharbor.branding import DATA_DIR_NAME
+
 import base64
 import logging
 import os
@@ -267,8 +269,8 @@ def _validate_skill_name(name: str) -> None:
 
 
 def user_skills_root() -> Path:
-    """返回 ~/.mewcode/skills，不存在则自动创建。"""
-    root = Path.home() / ".mewcode" / "skills"
+    """返回 ~/.codeharbor/skills，不存在则自动创建。"""
+    root = Path.home() / DATA_DIR_NAME / "skills"
     root.mkdir(parents=True, exist_ok=True)
     return root
 

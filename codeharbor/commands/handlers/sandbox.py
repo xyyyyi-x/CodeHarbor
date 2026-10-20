@@ -13,6 +13,8 @@
 
 from __future__ import annotations
 
+from codeharbor.branding import DATA_DIR_NAME
+
 from codeharbor.commands.registry import Command, CommandContext, CommandType
 
 
@@ -101,8 +103,8 @@ def _enable_sandbox(ctx: CommandContext, auto_allow: bool) -> None:
     config = SandboxConfig(
         allow_write=[work_dir, "/tmp"],
         deny_write=[
-            f"{work_dir}/.mewcode/config.yaml",
-            f"{work_dir}/.mewcode/permissions.local.yaml",
+            f"{work_dir}/{DATA_DIR_NAME}/config.yaml",
+            f"{work_dir}/{DATA_DIR_NAME}/permissions.local.yaml",
         ],
         network_enabled=False,
     )

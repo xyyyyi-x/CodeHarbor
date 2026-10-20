@@ -5,6 +5,8 @@
 
 from __future__ import annotations
 
+from codeharbor.branding import DATA_DIR_NAME
+
 import tempfile
 from pathlib import Path
 
@@ -13,9 +15,9 @@ class PathSandbox:
 
     # 默认禁写路径：这些文件包含敏感配置，不允许 Agent 直接修改
     _DEFAULT_DENY_WRITE: list[str] = [
-        ".mewcode/config.yaml",
-        ".mewcode/permissions.local.yaml",
-        ".mewcode/skills/",
+        f"{DATA_DIR_NAME}/config.yaml",
+        f"{DATA_DIR_NAME}/permissions.local.yaml",
+        f"{DATA_DIR_NAME}/skills/",
     ]
 
     def __init__(

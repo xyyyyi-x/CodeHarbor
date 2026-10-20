@@ -4,6 +4,8 @@
 # 简历模版：jianli.xiaolinnote.com
 from __future__ import annotations
 
+from codeharbor.branding import DATA_DIR_NAME
+
 import asyncio
 import logging
 import time
@@ -365,7 +367,7 @@ class Agent:
     @property
     def _transcript_path(self) -> str:
         if self.session_id:
-            return str(Path(self.work_dir) / ".mewcode" / "sessions" / f"{self.session_id}.jsonl")
+            return str(Path(self.work_dir) / DATA_DIR_NAME / "sessions" / f"{self.session_id}.jsonl")
         return ""
 
     @property
@@ -396,7 +398,7 @@ class Agent:
         _NOUNS = ["sketch", "draft", "spark", "bloom", "trail", "ridge", "creek", "grove",
                   "cliff", "cloud", "field", "forge", "frost", "haven", "pearl", "stone",
                   "storm", "river", "tower", "delta", "flame", "orbit", "pulse", "shore"]
-        plans_dir = Path(self.work_dir) / ".mewcode" / "plans"
+        plans_dir = Path(self.work_dir) / DATA_DIR_NAME / "plans"
         plans_dir.mkdir(parents=True, exist_ok=True)
         ts = datetime.datetime.now().strftime("%m%d-%H%M")
         slug = f"{random.choice(_ADJECTIVES)}-{random.choice(_NOUNS)}-{ts}"

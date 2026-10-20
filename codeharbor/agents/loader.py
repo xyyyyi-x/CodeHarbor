@@ -4,6 +4,8 @@
 # 简历模版：jianli.xiaolinnote.com
 from __future__ import annotations
 
+from codeharbor.branding import DATA_DIR_NAME
+
 import importlib.resources
 import logging
 from pathlib import Path
@@ -12,8 +14,8 @@ from codeharbor.agents.parser import AgentDef, AgentParseError, parse_agent_file
 
 log = logging.getLogger(__name__)
 
-PROJECT_AGENTS_DIR = ".mewcode/agents"
-USER_AGENTS_DIR = "~/.mewcode/agents"
+PROJECT_AGENTS_DIR = f"{DATA_DIR_NAME}/agents"
+USER_AGENTS_DIR = f"~/{DATA_DIR_NAME}/agents"
 
 
 class AgentLoader:
