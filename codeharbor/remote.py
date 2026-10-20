@@ -22,6 +22,7 @@ import os
 import time
 from pathlib import Path
 from typing import Any
+from urllib.parse import urlsplit
 
 import websockets
 from websockets.asyncio.server import Server as WSServer, ServerConnection
@@ -64,7 +65,7 @@ from codeharbor.skills.loader import SkillLoader
 from codeharbor.tools import ToolRegistry, create_default_registry
 from codeharbor.tools.impl.tool_search import ToolSearchTool
 from codeharbor.tools.load_skill import LoadSkill
-from codeharbor.web_content import INDEX_HTML
+from codeharbor.web_assets import load_web_asset
 
 log = logging.getLogger(__name__)
 
@@ -170,17 +171,46 @@ class RemoteServer:
         """拦截 HTTP 请求，对 / 路径返回 HTML 页面。
         返回 None 表示继续走 WebSocket 升级流程。
         """
-        if request.path == "/":
-            return Response(
-                200,
-                "OK",
-                websockets.Headers({"Content-Type": "text/html; charset=utf-8"}),
-                INDEX_HTML.encode("utf-8"),
+        if urlsplit(request.path).path == "/ws":
+            return None
+        asset = load_web_asset(request.path)
+        if asset is None:
+            return self._http_response(
+                404,
+                "Not Found",
+                b"Not Found",
+                "text/plain; charset=utf-8",
+                "no-store",
             )
-        if request.path != "/ws":
-            return Response(404, "Not Found", websockets.Headers(), b"404 Not Found")
-        # /ws 路径 → 继续 WebSocket 升级
-        return None
+        return self._http_response(
+            200,
+            "OK",
+            asset.body,
+            asset.content_type,
+            asset.cache_control,
+        )
+
+    @staticmethod
+    def _http_response(
+        status: int,
+        reason: str,
+        body: bytes,
+        content_type: str,
+        cache_control: str,
+    ) -> Response:
+        headers = websockets.Headers(
+            {
+                "Content-Type": content_type,
+                "Cache-Control": cache_control,
+                "X-Content-Type-Options": "nosniff",
+                "Content-Security-Policy": (
+                    "default-src 'self'; script-src 'self'; style-src 'self'; "
+                    "img-src 'self' data:; connect-src 'self' ws: wss:; "
+                    "object-src 'none'; base-uri 'none'; frame-ancestors 'none'"
+                ),
+            }
+        )
+        return Response(status, reason, headers, body)
 
     # ------------------------------------------------------------------
     # WebSocket 连接处理

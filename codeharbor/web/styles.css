@@ -1,0 +1,23 @@
+:root {
+  color-scheme: dark;
+  --ocean-deep: #071521;
+  --ocean-surface: #0d2638;
+  --beacon: #35d6c3;
+  --foam: #e8f7f5;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  min-height: 100vh;
+  margin: 0;
+  display: grid;
+  place-items: center;
+  color: var(--foam);
+  background: var(--ocean-deep);
+  font-family: Inter, ui-sans-serif, system-ui, sans-serif;
+}
+
+.shell { text-align: center; }
+.shell h1 { margin-block: 0.75rem 0.25rem; }
+.shell p { color: #9fc7c5; }

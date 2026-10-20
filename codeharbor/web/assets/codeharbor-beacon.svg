@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-labelledby="title">
+  <title id="title">CodeHarbor Harbor Beacon</title>
+  <path fill="#35d6c3" d="M29 8h6v30h-6zM22 38h20l7 18H15z"/>
+  <path fill="none" stroke="#e8f7f5" stroke-linecap="round" stroke-width="4" d="M20 18 9 13m35 5 11-5M19 29H7m38 0h12"/>
+  <circle cx="32" cy="14" r="6" fill="#ffd166"/>
+</svg>
