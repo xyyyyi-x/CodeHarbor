@@ -15,6 +15,7 @@ from __future__ import annotations
 from codeharbor.branding import DATA_DIR_NAME
 
 import asyncio
+import ipaddress
 import json
 import logging
 import os
@@ -68,6 +69,17 @@ from codeharbor.web_content import INDEX_HTML
 log = logging.getLogger(__name__)
 
 
+def is_loopback_host(host: str) -> bool:
+    """Return whether a bind host is explicitly limited to loopback."""
+    normalized = host.strip().lower()
+    if normalized == "localhost":
+        return True
+    try:
+        return ipaddress.ip_address(normalized).is_loopback
+    except ValueError:
+        return False
+
+
 class RemoteServer:
     """Remote Control 核心：桥接 Agent 事件和 WebSocket 客户端。"""
 
@@ -76,7 +88,7 @@ class RemoteServer:
         providers: list[ProviderConfig],
         mcp_servers: list[MCPServerConfig] | None = None,
         hook_engine: HookEngine | None = None,
-        addr: str = "0.0.0.0",
+        addr: str = "127.0.0.1",
         port: int = 18888,
         config: object | None = None,
     ) -> None:
@@ -86,6 +98,11 @@ class RemoteServer:
         self.hook_engine = hook_engine
         self.addr = addr
         self.port = port
+        if not is_loopback_host(addr):
+            log.warning(
+                "CodeHarbor remote service is unauthenticated and is binding to non-loopback host %s",
+                addr,
+            )
 
         # WebSocket 连接池（支持多客户端广播）
         self._connections: set[ServerConnection] = set()
@@ -129,7 +146,8 @@ class RemoteServer:
         # 初始化 MCP（如果有配置）
         await self._init_mcp()
 
-        print(f"\n  Remote UI: http://localhost:{self.port}\n")
+        display_host = "localhost" if is_loopback_host(self.addr) else self.addr
+        print(f"\n  Remote UI: http://{display_host}:{self.port}\n")
 
         # websockets 的 serve 支持 process_request 回调来处理普通 HTTP
         async with websockets.serve(

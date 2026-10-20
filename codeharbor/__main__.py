@@ -22,26 +22,18 @@ from codeharbor.migration import migrate_legacy_data_locations
 from codeharbor.permissions import PermissionMode
 
 
-def main() -> None:
-    migrate_legacy_data_locations(Path.cwd(), Path.home())
+def parse_port(value: str) -> int:
+    """Parse and validate a TCP port for argparse."""
+    try:
+        port = int(value)
+    except ValueError as exc:
+        raise argparse.ArgumentTypeError("port must be an integer") from exc
+    if not 1 <= port <= 65535:
+        raise argparse.ArgumentTypeError("port must be between 1 and 65535")
+    return port
 
-    # 队友 worker 模式：由 tmux/iTerm2 窗格用 `-m codeharbor --teammate ...` 拉起。
-    # 必须在 argparse 之前拦截，走独立的 worker 分支而不是正常 TUI。
-    teammate = _parse_teammate_flags(sys.argv[1:])
-    if teammate is not None:
-        asyncio.run(_run_teammate(*teammate))
-        return
 
-    # 先确保数据目录存在，否则下面写 debug.log 会因目录不存在而崩溃。
-    data_dir = Path(DATA_DIR_NAME)
-    data_dir.mkdir(parents=True, exist_ok=True)
-    logging.basicConfig(
-        level=logging.INFO,
-        format="%(asctime)s %(name)s %(message)s",
-        filename=str(data_dir / "debug.log"),
-        filemode="w",
-    )
-
+def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog=PRODUCT_CLI,
         description=f"{PRODUCT_NAME} AI coding assistant",
@@ -68,9 +60,43 @@ def main() -> None:
         "--remote",
         action="store_true",
         default=False,
-        help="Start in remote mode: WebSocket server on 0.0.0.0:18888 with browser UI",
+        help="Start the browser UI and WebSocket server",
     )
-    args = parser.parse_args()
+    parser.add_argument(
+        "--host",
+        default="127.0.0.1",
+        help="Remote server bind address (default: 127.0.0.1)",
+    )
+    parser.add_argument(
+        "--port",
+        type=parse_port,
+        default=18888,
+        help="Remote server port (default: 18888)",
+    )
+    return parser
+
+
+def main() -> None:
+    migrate_legacy_data_locations(Path.cwd(), Path.home())
+
+    # 队友 worker 模式：由 tmux/iTerm2 窗格用 `-m codeharbor --teammate ...` 拉起。
+    # 必须在 argparse 之前拦截，走独立的 worker 分支而不是正常 TUI。
+    teammate = _parse_teammate_flags(sys.argv[1:])
+    if teammate is not None:
+        asyncio.run(_run_teammate(*teammate))
+        return
+
+    # 先确保数据目录存在，否则下面写 debug.log 会因目录不存在而崩溃。
+    data_dir = Path(DATA_DIR_NAME)
+    data_dir.mkdir(parents=True, exist_ok=True)
+    logging.basicConfig(
+        level=logging.INFO,
+        format="%(asctime)s %(name)s %(message)s",
+        filename=str(data_dir / "debug.log"),
+        filemode="w",
+    )
+
+    args = build_parser().parse_args()
 
     try:
         config = load_config()
@@ -102,6 +128,8 @@ def main() -> None:
             providers=config.providers,
             mcp_servers=config.mcp_servers,
             hook_engine=hook_engine,
+            addr=args.host,
+            port=args.port,
             config=config,
         )
         asyncio.run(server.run())
