@@ -12,7 +12,12 @@ Remote Control 服务器：通过 WebSocket 桥接 Agent 事件和 Web UI。
 
 from __future__ import annotations
 
-from codeharbor.branding import DATA_DIR_NAME
+from codeharbor.branding import (
+    DATA_DIR_NAME,
+    PRODUCT_NAME,
+    PRODUCT_TAGLINE,
+    PRODUCT_VERSION,
+)
 
 import asyncio
 import ipaddress
@@ -221,13 +226,12 @@ class RemoteServer:
         self._connections.add(websocket)
         try:
             # 连接建立时推送会话信息
-            await self._broadcast({
-                "type": "connected",
-                "data": {
-                    "session": self.session_id,
-                    "cwd": os.getcwd(),
-                },
-            })
+            await self._broadcast(
+                {"type": "connected", "data": self._build_connected_payload()}
+            )
+            await self._broadcast(
+                {"type": "session_list", "data": self._build_session_list()}
+            )
 
             # 推送命令列表
             await self._broadcast({
@@ -258,6 +262,14 @@ class RemoteServer:
                     if self._cancel_event is not None:
                         self._cancel_event.set()
 
+                elif msg_type == "session_new":
+                    await self._handle_session_new()
+
+                elif msg_type == "session_resume":
+                    session_id = str(data.get("id", "")).strip()
+                    if session_id:
+                        await self._handle_session_resume(session_id)
+
                 elif msg_type == "ping":
                     # 应用层保活
                     await self._broadcast({"type": "pong", "data": None})
@@ -266,6 +278,127 @@ class RemoteServer:
             pass
         finally:
             self._connections.discard(websocket)
+
+    def _build_connected_payload(self) -> dict[str, Any]:
+        """Return browser metadata without serializing credentials or raw config."""
+        provider = self.providers[0] if self.providers else None
+        return {
+            "product": {
+                "name": PRODUCT_NAME,
+                "version": PRODUCT_VERSION,
+                "tagline": PRODUCT_TAGLINE,
+            },
+            "session": self.session_id,
+            "cwd": os.getcwd(),
+            "provider": {
+                "name": getattr(provider, "name", ""),
+                "protocol": getattr(provider, "protocol", ""),
+                "model": getattr(provider, "model", ""),
+            },
+            "permissionMode": getattr(self._config, "permission_mode", "default"),
+            "mcpServers": [
+                {"name": getattr(server, "name", "")}
+                for server in self._mcp_server_configs
+            ],
+            "bind": {
+                "host": self.addr,
+                "port": self.port,
+                "loopback": is_loopback_host(self.addr),
+            },
+        }
+
+    def _build_session_list(self) -> list[dict[str, Any]]:
+        if self.session_manager is None:
+            return []
+        return [
+            {
+                "id": meta.id,
+                "title": meta.title,
+                "messageCount": meta.message_count,
+                "tokenCount": meta.total_tokens,
+                "createdAt": meta.created_at.isoformat(),
+                "lastActive": meta.last_active.isoformat(),
+                "active": meta.id == self.session_id,
+            }
+            for meta in self.session_manager.list()
+        ]
+
+    async def _reject_session_switch_while_streaming(self) -> bool:
+        if not self._streaming:
+            return False
+        await self._broadcast(
+            {
+                "type": "error",
+                "data": {
+                    "message": "Cannot switch sessions while a response is streaming"
+                },
+            }
+        )
+        return True
+
+    async def _handle_session_new(self) -> bool:
+        if await self._reject_session_switch_while_streaming():
+            return False
+        if self.session_manager is None:
+            return False
+        if self.session is not None:
+            self.session.close()
+        self.session = self.session_manager.create()
+        self.session_id = self.session.session_id
+        self.conversation = ConversationManager()
+        if self.agent is not None:
+            self.agent.session_id = self.session_id
+        await self._broadcast({"type": "clear", "data": None})
+        await self._broadcast(
+            {"type": "session_active", "data": {"id": self.session_id}}
+        )
+        await self._broadcast(
+            {"type": "session_list", "data": self._build_session_list()}
+        )
+        return True
+
+    async def _handle_session_resume(self, session_id: str) -> bool:
+        if await self._reject_session_switch_while_streaming():
+            return False
+        if self.session_manager is None:
+            return False
+        resumed = self.session_manager.resume(session_id)
+        if resumed is None:
+            await self._broadcast(
+                {
+                    "type": "error",
+                    "data": {"message": f"Session not found: {session_id}"},
+                }
+            )
+            return False
+
+        if self.session is not None:
+            self.session.close()
+        self.session = resumed.session
+        self.session_id = resumed.session.session_id
+        self.conversation = ConversationManager()
+        self.conversation.history = list(resumed.messages)
+        if self.agent is not None:
+            self.agent.session_id = self.session_id
+
+        await self._broadcast({"type": "clear", "data": None})
+        for message in resumed.messages:
+            if message.role == "user":
+                event_type = "replay_user"
+            elif message.role == "assistant":
+                event_type = "replay_assistant"
+            else:
+                continue
+            await self._broadcast(
+                {"type": event_type, "data": {"content": message.content}}
+            )
+        await self._broadcast(
+            {"type": "session_active", "data": {"id": self.session_id}}
+        )
+        await self._broadcast(
+            {"type": "session_list", "data": self._build_session_list()}
+        )
+        return True
 
     # ------------------------------------------------------------------
     # Agent 初始化（复刻 TUI 的 _select_provider 流程）
@@ -456,7 +589,10 @@ class RemoteServer:
         assert self.conversation is not None
         assert self.agent is not None
 
+        history_start = len(self.conversation.history)
         self.conversation.add_user_message(content)
+        if self.session is not None:
+            self.session.append(self.conversation.history[-1])
 
         # 首次注入 MCP 指令
         if self._mcp_instructions:
@@ -608,6 +744,10 @@ class RemoteServer:
                 "data": {"message": str(exc)},
             })
         finally:
+            if self.session is not None:
+                for message in self.conversation.history[history_start + 1 :]:
+                    if message.role in {"user", "assistant"}:
+                        self.session.append(message)
             self._streaming = False
             self._cancel_event = None
 
