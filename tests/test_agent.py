@@ -12,7 +12,7 @@ from typing import Any, AsyncIterator
 
 import pytest
 
-from mewcode.agent import (
+from codeharbor.agent import (
     Agent,
     ErrorEvent,
     LoopComplete,
@@ -25,12 +25,12 @@ from mewcode.agent import (
     UsageEvent,
     partition_tool_calls,
 )
-from mewcode.prompts import build_environment_context, build_plan_mode_reminder, build_system_prompt
-from mewcode.client import LLMClient
-from mewcode.conversation import ConversationManager
-from mewcode.serialization import build_anthropic_messages
-from mewcode.tools import create_default_registry
-from mewcode.tools.base import (
+from codeharbor.prompts import build_environment_context, build_plan_mode_reminder, build_system_prompt
+from codeharbor.client import LLMClient
+from codeharbor.conversation import ConversationManager
+from codeharbor.serialization import build_anthropic_messages
+from codeharbor.tools import create_default_registry
+from codeharbor.tools.base import (
     StreamEnd,
     StreamEvent,
     TextDelta,
@@ -405,7 +405,7 @@ async def test_token_usage_accumulates():
 @pytest.mark.asyncio
 async def test_plan_mode():
     """通过 permission_mode 切换 plan 模式。"""
-    from mewcode.permissions import PermissionMode
+    from codeharbor.permissions import PermissionMode
 
     registry = create_default_registry()
     agent = Agent(MockLLMClient([]), registry, "anthropic")
@@ -425,7 +425,7 @@ async def test_plan_mode():
 async def test_plan_mode_denied_tool_returns_error():
     """在 plan 模式下，写入类工具需要审批（effect=ask）；当用户
     拒绝时，工具返回一个错误结果，而不会真正执行。"""
-    from mewcode.permissions import (
+    from codeharbor.permissions import (
         DangerousCommandDetector,
         PathSandbox,
         PermissionChecker,
@@ -472,7 +472,7 @@ async def test_plan_mode_denied_tool_returns_error():
 
 def test_partition_tool_calls():
     """分批逻辑会把可并发执行的调用归到同一组。"""
-    from mewcode.tools.base import ToolCallComplete
+    from codeharbor.tools.base import ToolCallComplete
 
     calls = [
         ToolCallComplete("1", "ReadFile", {}),

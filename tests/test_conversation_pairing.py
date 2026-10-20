@@ -4,8 +4,8 @@
 # 简历模版：jianli.xiaolinnote.com
 from __future__ import annotations
 
-from mewcode.conversation import Message, ToolResultBlock, ToolUseBlock
-from mewcode.conversation_pairing import INTERRUPTED_TOOL_RESULT, ensure_tool_pairing
+from codeharbor.conversation import Message, ToolResultBlock, ToolUseBlock
+from codeharbor.conversation_pairing import INTERRUPTED_TOOL_RESULT, ensure_tool_pairing
 
 
 def assistant_with_tool(tool_id: str) -> Message:

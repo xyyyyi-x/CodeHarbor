@@ -12,19 +12,19 @@ from pathlib import Path
 
 import pytest
 
-from mewcode.conversation import (
+from codeharbor.conversation import (
     ConversationManager,
     Message,
     ToolResultBlock,
     ToolUseBlock,
 )
-from mewcode.memory.auto_memory import MemoryManager
-from mewcode.memory.instructions import (
+from codeharbor.memory.auto_memory import MemoryManager
+from codeharbor.memory.instructions import (
     MAX_INCLUDE_DEPTH,
     load_instructions,
     process_includes,
 )
-from mewcode.memory.session import (
+from codeharbor.memory.session import (
     ResumeResult,
     Session,
     SessionManager,
@@ -756,7 +756,7 @@ class TestConversationInjection:
 class TestMemoryExtraction:
     def test_memory_types_aligned_with_go(self, tmp_path: Path) -> None:
         """验证四种记忆类型枚举。"""
-        from mewcode.memory.auto_memory import VALID_TYPES, _USER_LEVEL_TYPES, _PROJECT_LEVEL_TYPES
+        from codeharbor.memory.auto_memory import VALID_TYPES, _USER_LEVEL_TYPES, _PROJECT_LEVEL_TYPES
 
         assert VALID_TYPES == {"user", "feedback", "project", "reference"}
         assert _USER_LEVEL_TYPES == {"user", "feedback"}

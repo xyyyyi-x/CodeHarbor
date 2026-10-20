@@ -13,13 +13,13 @@ import asyncio
 import shutil
 from unittest.mock import MagicMock
 
-from mewcode.agents.tool_filter import apply_coordinator_filter
-from mewcode.teams.manager import TeamManager
-from mewcode.teams.models import resolve_team_dir
-from mewcode.tools.team_create import TeamCreateTool, TeamCreateParams
-from mewcode.tools.team_delete import TeamDeleteTool, TeamDeleteParams
-from mewcode.tools import ToolRegistry
-from mewcode.tools.base import Tool, ToolResult
+from codeharbor.agents.tool_filter import apply_coordinator_filter
+from codeharbor.teams.manager import TeamManager
+from codeharbor.teams.models import resolve_team_dir
+from codeharbor.tools.team_create import TeamCreateTool, TeamCreateParams
+from codeharbor.tools.team_delete import TeamDeleteTool, TeamDeleteParams
+from codeharbor.tools import ToolRegistry
+from codeharbor.tools.base import Tool, ToolResult
 
 
 class DummyTool(Tool):

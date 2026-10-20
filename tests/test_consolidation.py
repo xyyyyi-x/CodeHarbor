@@ -57,7 +57,7 @@ def setup_test_memories(mem_dir: str):
 # =========================================================================
 
 def test_lock_first_acquire():
-    from mewcode.memory.consolidation import _read_last_consolidated_at, _try_acquire_lock
+    from codeharbor.memory.consolidation import _read_last_consolidated_at, _try_acquire_lock
 
     with tempfile.TemporaryDirectory() as d:
         assert _read_last_consolidated_at(d) == 0
@@ -73,7 +73,7 @@ def test_lock_first_acquire():
 
 
 def test_lock_blocks_when_held():
-    from mewcode.memory.consolidation import _try_acquire_lock
+    from codeharbor.memory.consolidation import _try_acquire_lock
 
     with tempfile.TemporaryDirectory() as d:
         _try_acquire_lock(d)
@@ -82,7 +82,7 @@ def test_lock_blocks_when_held():
 
 
 def test_lock_reclaims_dead_pid():
-    from mewcode.memory.consolidation import _try_acquire_lock
+    from codeharbor.memory.consolidation import _try_acquire_lock
 
     with tempfile.TemporaryDirectory() as d:
         lock_file = os.path.join(d, ".consolidate-lock")
@@ -92,7 +92,7 @@ def test_lock_reclaims_dead_pid():
 
 
 def test_lock_rollback_deletes_on_zero():
-    from mewcode.memory.consolidation import _try_acquire_lock, _rollback_lock
+    from codeharbor.memory.consolidation import _try_acquire_lock, _rollback_lock
 
     with tempfile.TemporaryDirectory() as d:
         _try_acquire_lock(d)
@@ -102,7 +102,7 @@ def test_lock_rollback_deletes_on_zero():
 
 def test_lock_rollback_restores_mtime():
     import time
-    from mewcode.memory.consolidation import _try_acquire_lock, _rollback_lock
+    from codeharbor.memory.consolidation import _try_acquire_lock, _rollback_lock
 
     with tempfile.TemporaryDirectory() as d:
         lock_file = os.path.join(d, ".consolidate-lock")
@@ -120,7 +120,7 @@ def test_lock_rollback_restores_mtime():
 
 
 def test_prompt_contains_all_phases():
-    from mewcode.memory.consolidation import _build_consolidation_prompt
+    from codeharbor.memory.consolidation import _build_consolidation_prompt
 
     prompt = _build_consolidation_prompt("/mem", "/user/mem", "/sessions", ["s1", "s2"])
     for want in ["Phase 1", "Phase 2", "Phase 3", "Phase 4",
@@ -155,20 +155,20 @@ def test_e2e_consolidation_merges_duplicates():
 
 
 async def _run_consolidation(work_dir, api_key, base_url, model, mem_dir):
-    from mewcode.memory.consolidation import _build_consolidation_prompt
-    from mewcode.agent import Agent
-    from mewcode.conversation import ConversationManager
-    from mewcode.permissions.checker import PermissionChecker
-    from mewcode.tools import ToolRegistry
-    from mewcode.tools.bash import Bash
-    from mewcode.tools.edit_file import EditFile
-    from mewcode.tools.glob import Glob
-    from mewcode.tools.grep import Grep
-    from mewcode.tools.read_file import ReadFile
-    from mewcode.tools.write_file import WriteFile
+    from codeharbor.memory.consolidation import _build_consolidation_prompt
+    from codeharbor.agent import Agent
+    from codeharbor.conversation import ConversationManager
+    from codeharbor.permissions.checker import PermissionChecker
+    from codeharbor.tools import ToolRegistry
+    from codeharbor.tools.bash import Bash
+    from codeharbor.tools.edit_file import EditFile
+    from codeharbor.tools.glob import Glob
+    from codeharbor.tools.grep import Grep
+    from codeharbor.tools.read_file import ReadFile
+    from codeharbor.tools.write_file import WriteFile
 
-    from mewcode.config import ProviderConfig
-    from mewcode.client import OpenAICompatClient
+    from codeharbor.config import ProviderConfig
+    from codeharbor.client import OpenAICompatClient
 
     cfg = ProviderConfig(
         name="test",
@@ -184,10 +184,10 @@ async def _run_consolidation(work_dir, api_key, base_url, model, mem_dir):
     for tool_cls in [ReadFile, WriteFile, EditFile, Glob, Grep, Bash]:
         registry.register(tool_cls())
 
-    from mewcode.permissions.sandbox import PathSandbox
-    from mewcode.permissions.rules import RuleEngine
-    from mewcode.permissions.dangerous import DangerousCommandDetector
-    from mewcode.permissions.checker import PermissionMode
+    from codeharbor.permissions.sandbox import PathSandbox
+    from codeharbor.permissions.rules import RuleEngine
+    from codeharbor.permissions.dangerous import DangerousCommandDetector
+    from codeharbor.permissions.checker import PermissionMode
     sandbox = PathSandbox(mem_dir)
     checker = PermissionChecker(
         detector=DangerousCommandDetector(),

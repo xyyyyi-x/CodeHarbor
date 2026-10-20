@@ -22,5 +22,5 @@ def isolate_teams_dir(tmp_path):
     """
     home = tmp_path / "teams-home"
     home.mkdir(parents=True, exist_ok=True)
-    with patch("mewcode.teams.models.Path.home", return_value=home):
+    with patch("codeharbor.teams.models.Path.home", return_value=home):
         yield

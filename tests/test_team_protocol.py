@@ -7,8 +7,8 @@
 
 import json
 
-from mewcode.teams import protocol
-from mewcode.teams.mailbox import MailboxMessage, create_message
+from codeharbor.teams import protocol
+from codeharbor.teams.mailbox import MailboxMessage, create_message
 
 
 class TestShutdownNegotiation:
