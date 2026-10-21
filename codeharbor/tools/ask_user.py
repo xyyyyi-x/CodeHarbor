@@ -5,6 +5,7 @@
 from __future__ import annotations
 
 import asyncio
+from collections.abc import Awaitable, Callable
 from typing import Any
 
 from pydantic import BaseModel, Field
@@ -52,8 +53,12 @@ class AskUserTool(Tool):
     category: str = "read"
 
 
-    def __init__(self) -> None:
+    def __init__(
+        self,
+        on_ask: Callable[[AskUserEvent], Awaitable[None]] | None = None,
+    ) -> None:
         self._pending_event: AskUserEvent | None = None
+        self._on_ask = on_ask
 
     async def execute(self, params: AskUserParams) -> ToolResult:
         questions_data = [q.model_dump() for q in params.questions]
@@ -62,6 +67,8 @@ class AskUserTool(Tool):
         future: asyncio.Future[dict[str, str]] = loop.create_future()
 
         self._pending_event = AskUserEvent(questions=questions_data, future=future)
+        if self._on_ask is not None:
+            await self._on_ask(self._pending_event)
 
         try:
             answers = await asyncio.wait_for(future, timeout=300)

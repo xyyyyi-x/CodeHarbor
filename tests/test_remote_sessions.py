@@ -12,6 +12,7 @@ import pytest
 from codeharbor.conversation import ConversationManager, Message
 from codeharbor.memory.session import SessionManager
 from codeharbor.remote import RemoteServer
+from codeharbor.tools.ask_user import AskUserParams, AskUserTool, QuestionItem
 
 
 def _server_with_state(tmp_path: Path) -> RemoteServer:
@@ -47,6 +48,39 @@ def _capture_broadcasts(server: RemoteServer) -> list[dict[str, Any]]:
 
     server._broadcast = capture  # type: ignore[method-assign]
     return events
+
+
+@pytest.mark.asyncio
+async def test_remote_ask_user_round_trip_returns_browser_answers(
+    tmp_path: Path,
+) -> None:
+    server = _server_with_state(tmp_path)
+    events = _capture_broadcasts(server)
+    tool = AskUserTool(on_ask=server._handle_ask_user_event)
+    params = AskUserParams(
+        questions=[
+            QuestionItem(
+                type="radio",
+                name="choice",
+                message="选择 A 还是 B？",
+                options=["A", "B"],
+            )
+        ]
+    )
+
+    result_task = asyncio.create_task(tool.execute(params))
+    await asyncio.sleep(0)
+
+    assert events[0]["type"] == "ask_user"
+    assert events[0]["data"]["questions"] == [params.questions[0].model_dump()]
+    ask_id = events[0]["data"]["id"]
+    server._handle_ask_user_response(
+        {"id": ask_id, "answers": {"choice": "A"}}
+    )
+
+    result = await result_task
+    assert result.is_error is False
+    assert result.output == "choice: A"
 
 
 def test_connected_payload_is_useful_and_contains_no_secrets(tmp_path: Path) -> None:
@@ -257,6 +291,32 @@ async def test_reconnect_replays_visible_messages_without_internal_reminders(
         {"type": "clear", "data": None},
         {"type": "replay_user", "data": {"content": "visible question"}},
         {"type": "replay_assistant", "data": {"content": "visible answer"}},
+    ]
+
+
+@pytest.mark.asyncio
+async def test_reconnect_skips_tool_only_messages_with_empty_content(
+    tmp_path: Path,
+) -> None:
+    server = _server_with_state(tmp_path)
+    assert server.conversation is not None
+    server.conversation.history.extend(
+        [
+            Message(role="assistant", content=""),
+            Message(role="user", content=""),
+            Message(role="assistant", content="answer after tool"),
+        ]
+    )
+    events = _capture_broadcasts(server)
+
+    await server._replay_active_conversation()
+
+    assert events == [
+        {"type": "clear", "data": None},
+        {
+            "type": "replay_assistant",
+            "data": {"content": "answer after tool"},
+        },
     ]
 
 

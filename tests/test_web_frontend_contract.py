@@ -22,7 +22,14 @@ def test_frontend_uses_only_external_local_scripts() -> None:
     assert "<script>" not in html
     assert 'src="/vendor/marked.umd.js"' in html
     assert 'src="/vendor/purify.min.js"' in html
-    assert 'src="/app.js"' in html
+    assert 'src="/app.js?v=0.2.0"' in html
+
+
+def test_mutable_frontend_assets_use_product_version_cache_keys() -> None:
+    html = _read("index.html")
+
+    assert 'href="/styles.css?v=0.2.0"' in html
+    assert 'src="/app.js?v=0.2.0"' in html
 
 
 def test_vendored_markdown_libraries_have_pinned_versions_and_licenses() -> None:
@@ -94,6 +101,7 @@ def test_frontend_contract_covers_protocol_and_helpers() -> None:
         "tool_use",
         "tool_result",
         "permission_request",
+        "ask_user",
         "turn_complete",
         "loop_complete",
         "usage",
@@ -110,6 +118,7 @@ def test_frontend_contract_covers_protocol_and_helpers() -> None:
     outbound_events = {
         "user_message",
         "permission_response",
+        "ask_user_response",
         "cancel",
         "ping",
         "session_new",
@@ -125,6 +134,23 @@ def test_frontend_contract_covers_protocol_and_helpers() -> None:
         "updateResponsivePanels",
     ):
         assert re.search(rf"function\s+{helper}\s*\(", script), helper
+
+
+def test_permission_buttons_send_backend_response_values() -> None:
+    script = _read("app.js")
+
+    assert 'send("permission_response", { id: data.id, response: "deny" })' in script
+    assert 'send("permission_response", { id: data.id, response: "allow" })' in script
+    assert "allowed:" not in script
+
+
+def test_ask_user_ui_submits_named_answers() -> None:
+    script = _read("app.js")
+
+    assert "function showAskUser" in script
+    assert 'send("ask_user_response", { id: data.id, answers })' in script
+    assert "提交回答" in script
+    assert "data.questions" in script
 
 
 def test_responsive_and_reduced_motion_contract() -> None:

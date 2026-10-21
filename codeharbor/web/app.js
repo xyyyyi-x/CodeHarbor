@@ -265,15 +265,84 @@
     allow.className = "allow";
     allow.textContent = "允许";
     deny.addEventListener("click", () => {
-      send("permission_response", { id: data.id, allowed: false });
+      send("permission_response", { id: data.id, response: "deny" });
       card.remove();
     });
     allow.addEventListener("click", () => {
-      send("permission_response", { id: data.id, allowed: true });
+      send("permission_response", { id: data.id, response: "allow" });
       card.remove();
     });
     actions.append(deny, allow);
     card.append(actions);
+  }
+
+  function showAskUser(data) {
+    const card = addEventCard("permission ask-user", "需要你的选择", "");
+    const form = document.createElement("form");
+    form.className = "ask-user-form";
+    const questions = Array.isArray(data.questions) ? data.questions : [];
+
+    questions.forEach((question, index) => {
+      const field = document.createElement("fieldset");
+      const legend = document.createElement("legend");
+      legend.textContent = question.message || question.name || `问题 ${index + 1}`;
+      field.append(legend);
+      const options = Array.isArray(question.options) ? question.options : [];
+
+      if (question.type === "select") {
+        const select = document.createElement("select");
+        select.name = question.name;
+        options.forEach((option) => {
+          const item = document.createElement("option");
+          item.value = option;
+          item.textContent = option;
+          select.append(item);
+        });
+        field.append(select);
+      } else if (question.type === "radio" || question.type === "checkbox") {
+        options.forEach((option, optionIndex) => {
+          const label = document.createElement("label");
+          const input = document.createElement("input");
+          input.type = question.type;
+          input.name = question.name;
+          input.value = option;
+          input.id = `ask-${data.id}-${index}-${optionIndex}`;
+          label.htmlFor = input.id;
+          label.append(input, document.createTextNode(option));
+          field.append(label);
+        });
+      } else {
+        const input = document.createElement("input");
+        input.type = "text";
+        input.name = question.name;
+        field.append(input);
+      }
+      form.append(field);
+    });
+
+    const submit = document.createElement("button");
+    submit.type = "submit";
+    submit.className = "allow";
+    submit.textContent = "提交回答";
+    form.append(submit);
+    form.addEventListener("submit", (event) => {
+      event.preventDefault();
+      const answers = {};
+      questions.forEach((question) => {
+        const controls = [...form.elements].filter((element) => element.name === question.name);
+        if (question.type === "checkbox") {
+          answers[question.name] = controls.filter((control) => control.checked).map((control) => control.value).join(", ");
+        } else if (question.type === "radio") {
+          answers[question.name] = controls.find((control) => control.checked)?.value || "";
+        } else {
+          answers[question.name] = controls[0]?.value || "";
+        }
+      });
+      send("ask_user_response", { id: data.id, answers });
+      card.remove();
+    });
+    card.append(form);
+    maybeScrollToBottom();
   }
 
   function handleEvent(message) {
@@ -327,7 +396,7 @@
         showPermission(data);
         break;
       case "ask_user":
-        addEventCard("permission", "需要你的选择", data.question || data.message || "");
+        showAskUser(data);
         break;
       case "usage":
         ui.tokenCount.textContent = Number((data.inputTokens || 0) + (data.outputTokens || 0)).toLocaleString();

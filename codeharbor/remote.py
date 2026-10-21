@@ -68,6 +68,7 @@ from codeharbor.permissions import (
 )
 from codeharbor.skills.loader import SkillLoader
 from codeharbor.tools import ToolRegistry, create_default_registry
+from codeharbor.tools.ask_user import AskUserEvent, AskUserTool
 from codeharbor.tools.impl.tool_search import ToolSearchTool
 from codeharbor.tools.load_skill import LoadSkill
 from codeharbor.web_assets import load_web_asset
@@ -134,6 +135,9 @@ class RemoteServer:
 
         # 权限请求的 pending 队列：id -> Future
         self._pending_perms: dict[str, asyncio.Future[PermissionResponse]] = {}
+        self._pending_ask_users: dict[
+            str, asyncio.Future[dict[str, str]]
+        ] = {}
 
         # 命令注册表
         self.command_registry = CommandRegistry()
@@ -274,6 +278,9 @@ class RemoteServer:
                 elif msg_type == "permission_response":
                     self._handle_permission_response(data)
 
+                elif msg_type == "ask_user_response":
+                    self._handle_ask_user_response(data)
+
                 elif msg_type == "cancel":
                     self._cancel_active_response()
 
@@ -393,6 +400,7 @@ class RemoteServer:
             message
             for message in self.conversation.history
             if message.role in {"user", "assistant"}
+            and str(message.content).strip()
             and not _is_internal_reminder(message)
         ]
         if not visible:
@@ -472,6 +480,7 @@ class RemoteServer:
         # 工具注册表
         self.registry = create_default_registry()
         self.registry.register(ToolSearchTool(self.registry, protocol=provider.protocol))
+        self.registry.register(AskUserTool(on_ask=self._handle_ask_user_event))
 
         # Skill 加载
         self.skill_loader = SkillLoader(work_dir)
@@ -966,6 +975,36 @@ class RemoteServer:
         }
         response = mapping.get(response_str, PermissionResponse.DENY)
         future.set_result(response)
+
+    async def _handle_ask_user_event(self, event: AskUserEvent) -> None:
+        """Broadcast an AskUser request and keep its future for the response."""
+        ask_id = f"ask_{time.time_ns()}"
+        self._pending_ask_users[ask_id] = event.future
+        event.future.add_done_callback(
+            lambda _future: self._pending_ask_users.pop(ask_id, None)
+        )
+        await self._broadcast(
+            {
+                "type": "ask_user",
+                "data": {
+                    "id": ask_id,
+                    "questions": event.questions,
+                },
+            }
+        )
+
+    def _handle_ask_user_response(self, data: dict[str, Any]) -> None:
+        """Resolve a pending AskUser request with browser-provided answers."""
+        ask_id = str(data.get("id", ""))
+        future = self._pending_ask_users.pop(ask_id, None)
+        if future is None or future.done():
+            return
+        raw_answers = data.get("answers", {})
+        answers = {
+            str(name): str(value)
+            for name, value in raw_answers.items()
+        } if isinstance(raw_answers, dict) else {}
+        future.set_result(answers)
 
     # ------------------------------------------------------------------
     # 辅助方法

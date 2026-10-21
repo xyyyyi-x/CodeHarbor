@@ -773,7 +773,7 @@ class CodeHarborApp(App):
         self.registry.register(
             ToolSearchTool(self.registry, protocol=provider.protocol)
         )
-        self.registry.register(AskUserTool())
+        self.registry.register(AskUserTool(on_ask=self._handle_askuser))
 
         from codeharbor.tools.exit_plan_mode import ExitPlanModeTool
         self._exit_plan_tool = ExitPlanModeTool()
@@ -1446,10 +1446,6 @@ class CodeHarborApp(App):
                     if block:
                         block.set_result(event.output, event.is_error, event.elapsed)
                     self.call_after_refresh(chat.scroll_end, animate=False)
-
-                    ask_tool = self.registry.get("AskUserQuestion")
-                    if ask_tool and isinstance(ask_tool, AskUserTool) and ask_tool._pending_event:
-                        await self._handle_askuser(ask_tool._pending_event)
 
                 elif isinstance(event, TurnComplete):
                     if self.session:
