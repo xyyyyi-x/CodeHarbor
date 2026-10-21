@@ -3,18 +3,84 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="theme-color" content="#071521">
-  <title>CodeHarbor</title>
+  <meta name="theme-color" content="#06131e">
+  <meta name="description" content="CodeHarbor browser coding workspace">
+  <title>CodeHarbor · Your code. Guided home.</title>
   <link rel="icon" href="/assets/favicon.svg" type="image/svg+xml">
   <link rel="stylesheet" href="/styles.css">
 </head>
 <body>
-  <main class="shell">
-    <img src="/assets/codeharbor-beacon.svg" alt="" width="48" height="48">
-    <h1>CodeHarbor</h1>
-    <p>Your code. Guided home.</p>
-    <p id="connection-status" role="status">正在连接…</p>
-  </main>
+  <div class="app-shell">
+    <header class="topbar">
+      <div class="brand-lockup">
+        <img class="brand-mark" src="/assets/codeharbor-beacon.svg" alt="" width="38" height="38">
+        <div><strong>CodeHarbor</strong><span>Your code. Guided home.</span></div>
+      </div>
+      <div class="topbar-actions">
+        <button class="icon-button mobile-only" id="toggle-sessions" type="button" aria-label="打开会话列表" aria-controls="sessions-panel" aria-expanded="false">☰</button>
+        <div class="connection-pill" id="connection-pill" data-state="connecting" role="status" aria-live="polite"><span class="connection-dot" aria-hidden="true"></span><span id="connection-status">正在连接</span></div>
+        <button class="icon-button status-toggle" id="toggle-status" type="button" aria-label="打开运行状态" aria-controls="status-panel" aria-expanded="false">⌁</button>
+      </div>
+    </header>
+    <div class="workspace">
+      <aside class="panel sessions-panel" id="sessions-panel" aria-label="会话">
+        <div class="panel-heading">
+          <div><span class="eyebrow">航行记录</span><h2>会话</h2></div>
+          <button class="primary-small" id="new-session" type="button" aria-label="新建会话">＋ 新建</button>
+        </div>
+        <div class="session-list" id="session-list" role="list"><p class="panel-placeholder">连接后显示历史会话</p></div>
+        <div class="sidebar-footnote"><span class="beacon-pulse" aria-hidden="true"></span>本地会话，仅保存在当前项目</div>
+      </aside>
+      <main class="chat-column" aria-label="CodeHarbor 对话工作区">
+        <div class="chat-toolbar">
+          <div><span class="eyebrow">当前航道</span><h1 id="active-session-title">新会话</h1></div>
+          <div class="token-meter" aria-label="Token 使用量"><span>Tokens</span><strong id="token-count">0</strong></div>
+        </div>
+        <section class="message-stream" id="message-stream" aria-live="polite" aria-label="对话消息">
+          <div class="empty-state" id="empty-state">
+            <div class="empty-beacon" aria-hidden="true"><img src="/assets/codeharbor-beacon.svg" alt="" width="70" height="70"></div>
+            <p class="eyebrow">HARBOR READY</p>
+            <h2>从代码问题开始</h2>
+            <p>分析仓库、修复问题、执行命令，或让 CodeHarbor 帮你规划下一步。</p>
+            <div class="prompt-chips" aria-label="快捷建议">
+              <button type="button" data-prompt="分析这个项目的结构并给出改进建议">分析项目结构</button>
+              <button type="button" data-prompt="运行测试并定位第一个失败原因">定位测试失败</button>
+              <button type="button" data-prompt="检查当前改动并总结潜在风险">检查当前改动</button>
+            </div>
+          </div>
+        </section>
+        <section class="composer-wrap" aria-label="消息编辑器">
+          <div class="composer-status" id="composer-status" aria-live="polite"></div>
+          <div class="composer">
+            <textarea id="message-input" aria-label="输入给 CodeHarbor 的消息" rows="1" placeholder="描述任务，或输入 / 查看命令…"></textarea>
+            <div class="composer-actions">
+              <span class="composer-hint">Enter 发送 · Shift+Enter 换行</span>
+              <button class="stop-button" id="stop-response" type="button" aria-label="停止生成" hidden>■ 停止</button>
+              <button class="send-button" id="send-message" type="button" aria-label="发送消息">发送 <span aria-hidden="true">↑</span></button>
+            </div>
+          </div>
+        </section>
+      </main>
+      <aside class="panel status-panel" id="status-panel" aria-label="运行状态">
+        <div class="panel-heading"><div><span class="eyebrow">灯塔信号</span><h2>运行状态</h2></div></div>
+        <dl class="status-grid">
+          <div><dt>Provider</dt><dd id="provider-name">—</dd></div>
+          <div><dt>Model</dt><dd id="model-name">—</dd></div>
+          <div><dt>Protocol</dt><dd id="protocol-name">—</dd></div>
+          <div><dt>Permission</dt><dd id="permission-mode">—</dd></div>
+        </dl>
+        <section class="status-section">
+          <div class="status-section-heading"><h3>MCP Servers</h3><span id="mcp-count">0</span></div>
+          <ul class="mcp-list" id="mcp-list"><li class="muted">未配置</li></ul>
+        </section>
+        <section class="status-section"><h3>Workspace</h3><code class="workspace-path" id="workspace-path">等待连接…</code></section>
+        <section class="status-section safety-note"><span aria-hidden="true">◉</span><p>默认仅监听本机回环地址。公开绑定前请配置可信网络边界。</p></section>
+      </aside>
+    </div>
+  </div>
+  <div class="panel-scrim" id="panel-scrim" hidden></div>
+  <script src="/vendor/marked.umd.js" defer></script>
+  <script src="/vendor/purify.min.js" defer></script>
   <script src="/app.js" defer></script>
 </body>
 </html>

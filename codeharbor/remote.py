@@ -86,6 +86,16 @@ def is_loopback_host(host: str) -> bool:
         return False
 
 
+def _is_internal_reminder(message: Any) -> bool:
+    if getattr(message, "role", "") != "user":
+        return False
+    content = str(getattr(message, "content", "")).lstrip()
+    return content.startswith("<system-reminder>") or (
+        content.startswith("Current working directory:")
+        and "\nOperating system:" in content
+    )
+
+
 class RemoteServer:
     """Remote Control 核心：桥接 Agent 事件和 WebSocket 客户端。"""
 
@@ -120,6 +130,7 @@ class RemoteServer:
         self.session_id: str = ""
         self._streaming = False
         self._cancel_event: asyncio.Event | None = None
+        self._active_task: asyncio.Task[None] | None = None
 
         # 权限请求的 pending 队列：id -> Future
         self._pending_perms: dict[str, asyncio.Future[PermissionResponse]] = {}
@@ -232,6 +243,7 @@ class RemoteServer:
             await self._broadcast(
                 {"type": "session_list", "data": self._build_session_list()}
             )
+            await self._replay_active_conversation()
 
             # 推送命令列表
             await self._broadcast({
@@ -251,16 +263,19 @@ class RemoteServer:
 
                 if msg_type == "user_message":
                     content = data.get("content", "").strip()
-                    if content:
+                    if content and (
+                        self._active_task is None or self._active_task.done()
+                    ):
                         # 在后台任务中处理，不阻塞 WebSocket 读循环
-                        asyncio.create_task(self._handle_user_message(content))
+                        task = asyncio.create_task(self._handle_user_message(content))
+                        self._active_task = task
+                        task.add_done_callback(self._clear_active_task)
 
                 elif msg_type == "permission_response":
                     self._handle_permission_response(data)
 
                 elif msg_type == "cancel":
-                    if self._cancel_event is not None:
-                        self._cancel_event.set()
+                    self._cancel_active_response()
 
                 elif msg_type == "session_new":
                     await self._handle_session_new()
@@ -278,6 +293,20 @@ class RemoteServer:
             pass
         finally:
             self._connections.discard(websocket)
+
+    def _clear_active_task(self, task: asyncio.Task[None]) -> None:
+        if self._active_task is task:
+            self._active_task = None
+
+    def _cancel_active_response(self) -> bool:
+        cancelled = False
+        if self._cancel_event is not None:
+            self._cancel_event.set()
+            cancelled = True
+        if self._active_task is not None and not self._active_task.done():
+            self._active_task.cancel()
+            cancelled = True
+        return cancelled
 
     def _build_connected_payload(self) -> dict[str, Any]:
         """Return browser metadata without serializing credentials or raw config."""
@@ -357,6 +386,24 @@ class RemoteServer:
         )
         return True
 
+    async def _replay_active_conversation(self) -> None:
+        if self.conversation is None:
+            return
+        visible = [
+            message
+            for message in self.conversation.history
+            if message.role in {"user", "assistant"}
+            and not _is_internal_reminder(message)
+        ]
+        if not visible:
+            return
+        await self._broadcast({"type": "clear", "data": None})
+        for message in visible:
+            event_type = "replay_user" if message.role == "user" else "replay_assistant"
+            await self._broadcast(
+                {"type": event_type, "data": {"content": message.content}}
+            )
+
     async def _handle_session_resume(self, session_id: str) -> bool:
         if await self._reject_session_switch_while_streaming():
             return False
@@ -381,17 +428,7 @@ class RemoteServer:
         if self.agent is not None:
             self.agent.session_id = self.session_id
 
-        await self._broadcast({"type": "clear", "data": None})
-        for message in resumed.messages:
-            if message.role == "user":
-                event_type = "replay_user"
-            elif message.role == "assistant":
-                event_type = "replay_assistant"
-            else:
-                continue
-            await self._broadcast(
-                {"type": event_type, "data": {"content": message.content}}
-            )
+        await self._replay_active_conversation()
         await self._broadcast(
             {"type": "session_active", "data": {"id": self.session_id}}
         )
@@ -589,10 +626,10 @@ class RemoteServer:
         assert self.conversation is not None
         assert self.agent is not None
 
-        history_start = len(self.conversation.history)
         self.conversation.add_user_message(content)
         if self.session is not None:
             self.session.append(self.conversation.history[-1])
+        persisted_message_ids = {id(message) for message in self.conversation.history}
 
         # 首次注入 MCP 指令
         if self._mcp_instructions:
@@ -745,9 +782,19 @@ class RemoteServer:
             })
         finally:
             if self.session is not None:
-                for message in self.conversation.history[history_start + 1 :]:
-                    if message.role in {"user", "assistant"}:
+                for message in self.conversation.history:
+                    if (
+                        id(message) not in persisted_message_ids
+                        and (
+                            message.role == "assistant"
+                            or (message.role == "user" and message.tool_results)
+                        )
+                        and not _is_internal_reminder(message)
+                    ):
                         self.session.append(message)
+                await self._broadcast(
+                    {"type": "session_list", "data": self._build_session_list()}
+                )
             self._streaming = False
             self._cancel_event = None
 

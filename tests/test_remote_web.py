@@ -16,6 +16,8 @@ from codeharbor.web_assets import load_web_asset
         ("/app.js", "text/javascript; charset=utf-8", b"WebSocket"),
         ("/assets/codeharbor-beacon.svg", "image/svg+xml", b"<svg"),
         ("/assets/favicon.svg", "image/svg+xml", b"<svg"),
+        ("/vendor/marked.umd.js", "text/javascript; charset=utf-8", b"18.1.1"),
+        ("/vendor/purify.min.js", "text/javascript; charset=utf-8", b"3.4.17"),
     ],
 )
 def test_loads_packaged_web_assets(path: str, content_type: str, marker: bytes) -> None:

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import asyncio
 import json
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
@@ -204,13 +205,19 @@ async def test_session_switch_is_rejected_while_streaming(
 async def test_web_conversation_is_persisted_for_later_resume(tmp_path: Path) -> None:
     server = _server_with_state(tmp_path)
     session_id = server.session_id
-    _capture_broadcasts(server)
+    events = _capture_broadcasts(server)
 
     class FakeAgent:
         def __init__(self) -> None:
             self.session_id = session_id
 
         async def run(self, conversation: ConversationManager):
+            conversation.inject_environment(
+                "Current working directory: C:/project\n"
+                "Operating system: Windows\n"
+                "Current time: 2026-10-20 12:00:00"
+            )
+            conversation.add_system_reminder("internal instructions must stay hidden")
             conversation.add_assistant_message("persisted reply")
             if False:
                 yield None
@@ -228,4 +235,42 @@ async def test_web_conversation_is_persisted_for_later_resume(tmp_path: Path) ->
         "persisted question",
         "persisted reply",
     ]
+    assert events[-1]["type"] == "session_list"
+    assert events[-1]["data"][0]["title"] == "persisted question"
     resumed.session.close()
+
+
+@pytest.mark.asyncio
+async def test_reconnect_replays_visible_messages_without_internal_reminders(
+    tmp_path: Path,
+) -> None:
+    server = _server_with_state(tmp_path)
+    assert server.conversation is not None
+    server.conversation.add_user_message("visible question")
+    server.conversation.add_system_reminder("hidden instructions")
+    server.conversation.add_assistant_message("visible answer")
+    events = _capture_broadcasts(server)
+
+    await server._replay_active_conversation()
+
+    assert events == [
+        {"type": "clear", "data": None},
+        {"type": "replay_user", "data": {"content": "visible question"}},
+        {"type": "replay_assistant", "data": {"content": "visible answer"}},
+    ]
+
+
+@pytest.mark.asyncio
+async def test_cancel_interrupts_active_response_before_first_stream_event(
+    tmp_path: Path,
+) -> None:
+    server = _server_with_state(tmp_path)
+    server._cancel_event = asyncio.Event()
+    server._active_task = asyncio.create_task(asyncio.sleep(60))
+
+    cancelled = server._cancel_active_response()
+    await asyncio.sleep(0)
+
+    assert cancelled is True
+    assert server._cancel_event.is_set()
+    assert server._active_task.cancelled()
