@@ -148,7 +148,7 @@ class TestPathSandbox:
         assert ok
 
     def test_temp_dir_allowed(self) -> None:
-        tmp = Path(tempfile.gettempdir()) / "mewcode_test.txt"
+        tmp = Path(tempfile.gettempdir()) / "codeharbor_test.txt"
         ok, _ = self.sandbox.check(str(tmp))
         assert ok
 

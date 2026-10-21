@@ -12,6 +12,8 @@ from textual.containers import Vertical
 from textual.message import Message
 from textual.widgets import Static
 
+from codeharbor.branding import PRODUCT_NAME
+
 
 class PlanChoice(str, Enum):
     YOLO = "yolo"
@@ -22,7 +24,7 @@ class PlanChoice(str, Enum):
 _OPTIONS = [
     ("Yes, enter YOLO mode (auto-approve all)", PlanChoice.YOLO),
     ("Yes, manually approve edits", PlanChoice.MANUAL),
-    ("Tell MewCode what to change", PlanChoice.FEEDBACK),
+    (f"Tell {PRODUCT_NAME} what to change", PlanChoice.FEEDBACK),
 ]
 
 
@@ -59,8 +61,8 @@ class InlinePlanWidget(Vertical, can_focus=True):
 
     def _build_content(self) -> str:
         lines = [
-            "\n [bold #875fff]MewCode has written up a plan and is ready to execute. "
-            "Would you like to proceed?[/bold #875fff]\n"
+            f"\n [bold #2DD4BF]{PRODUCT_NAME} has written up a plan and is ready "
+            "to execute. Would you like to proceed?[/bold #2DD4BF]\n"
         ]
         for i, (label, _choice) in enumerate(_OPTIONS):
             if i == self._cursor:

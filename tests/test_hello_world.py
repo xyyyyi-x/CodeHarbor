@@ -6,5 +6,16 @@
 from __future__ import annotations
 
 
-def test_hello_world() -> None:
-    assert "Hello World" == "Hello World"
+def test_tui_banner_displays_codeharbor_beacon_identity() -> None:
+    from codeharbor.app import CodeHarborApp
+
+    banner = CodeHarborApp._make_banner(
+        model="deepseek-chat",
+        work_dir="D:/workspace",
+    ).plain
+
+    assert "CodeHarbor v0.2.0" in banner
+    assert "◢█◣" in banner
+    assert "deepseek-chat" in banner
+    assert "D:/workspace" in banner
+    assert "MewCode" not in banner

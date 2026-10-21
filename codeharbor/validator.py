@@ -2,7 +2,7 @@
 # 后端八股网站：xiaolincoding.com
 # Agent网站：xiaolinnote.com
 # 简历模版：jianli.xiaolinnote.com
-"""MewCode 的配置校验逻辑。"""
+"""CodeHarbor 的配置校验逻辑。"""
 
 from __future__ import annotations
 

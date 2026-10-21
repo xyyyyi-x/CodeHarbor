@@ -18,7 +18,7 @@ from codeharbor.conversation import (
     ToolResultBlock,
     ToolUseBlock,
 )
-from codeharbor.memory.auto_memory import MemoryManager
+from codeharbor.memory.auto_memory import MemoryManager, get_auto_mem_path
 from codeharbor.memory.instructions import (
     MAX_INCLUDE_DEPTH,
     load_instructions,
@@ -36,7 +36,7 @@ from codeharbor.memory.session import (
 )
 
 # =========================================================================
-# A. 指令文件（MEWCODE.md）
+# A. 指令文件（CODEHARBOR.md）
 # =========================================================================
 
 class TestProcessIncludes:
@@ -116,18 +116,17 @@ class TestProcessIncludes:
 
 class TestLoadInstructions:
     def test_single_layer(self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
-        mewcode_md = tmp_path / "MEWCODE.md"
-        mewcode_md.write_text("project instructions", encoding="utf-8")
+        codeharbor_md = tmp_path / "CODEHARBOR.md"
+        codeharbor_md.write_text("project instructions", encoding="utf-8")
         result = load_instructions(str(tmp_path))
         assert "project instructions" in result
 
     def test_multi_layer_priority(self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
-        """发现顺序：MEWCODE.md 在前，.codeharbor/INSTRUCTIONS.md（legacy）在后。"""
-        root_md = tmp_path / "MEWCODE.md"
+        """发现顺序：CODEHARBOR.md 在前，遗留 INSTRUCTIONS.md 在后。"""
+        root_md = tmp_path / "CODEHARBOR.md"
         root_md.write_text("root level", encoding="utf-8")
         dotdir = tmp_path / ".codeharbor"
         dotdir.mkdir()
-        # 不发现 .codeharbor/MEWCODE.md，只发现 .codeharbor/INSTRUCTIONS.md（legacy）
         legacy_md = dotdir / "INSTRUCTIONS.md"
         legacy_md.write_text("legacy level", encoding="utf-8")
         result = load_instructions(str(tmp_path))
@@ -137,6 +136,20 @@ class TestLoadInstructions:
     def test_no_files_returns_empty(self, tmp_path: Path) -> None:
         result = load_instructions(str(tmp_path))
         assert result == ""
+
+    def test_legacy_instruction_filename_remains_readable(self, tmp_path: Path) -> None:
+        legacy_md = tmp_path / "MEWCODE.md"
+        legacy_md.write_text("legacy project instructions", encoding="utf-8")
+
+        result = load_instructions(str(tmp_path))
+
+        assert "legacy project instructions" in result
+
+
+def test_codeharbor_remote_memory_override(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("CODEHARBOR_REMOTE_MEMORY_DIR", "D:/shared/memory")
+
+    assert get_auto_mem_path("D:/project").replace("\\", "/") == "D:/shared/memory/"
 
 # =========================================================================
 # B. 会话记录 SessionRecord
@@ -707,7 +720,7 @@ class TestConversationInjection:
         assert len(conv.history) == 2
         assert conv.history[0].content == "env info"
         assert "<system-reminder>" in conv.history[1].content
-        assert "mewcodeMd" in conv.history[1].content
+        assert "codeharborMd" in conv.history[1].content
         assert "project rules" in conv.history[1].content
         assert "autoMemory" in conv.history[1].content
         assert "user prefs" in conv.history[1].content
@@ -725,7 +738,7 @@ class TestConversationInjection:
         conv.inject_long_term_memory("rules", "")
         assert len(conv.history) == 1
         assert "<system-reminder>" in conv.history[0].content
-        assert "mewcodeMd" in conv.history[0].content
+        assert "codeharborMd" in conv.history[0].content
         assert "rules" in conv.history[0].content
 
     def test_inject_memories_only(self) -> None:

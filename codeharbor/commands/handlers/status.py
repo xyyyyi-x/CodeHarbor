@@ -7,14 +7,15 @@ from __future__ import annotations
 
 import os
 
+from codeharbor.branding import PRODUCT_NAME, PRODUCT_VERSION
 from codeharbor.commands.registry import Command, CommandContext, CommandType
 
 
-VERSION = "v0.9.0"
+VERSION = f"v{PRODUCT_VERSION}"
 
 
 async def handle_status(ctx: CommandContext) -> None:
-    lines = ["MewCode 状态", "─────────────"]
+    lines = [f"{PRODUCT_NAME} 状态", "─────────────"]
 
     mode = ctx.agent.permission_mode.value if ctx.agent else "unknown"
     lines.append(f"模式: {mode}")

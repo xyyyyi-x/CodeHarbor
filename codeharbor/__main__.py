@@ -135,10 +135,10 @@ def main() -> None:
         asyncio.run(server.run())
         return
 
-    from codeharbor.app import MewCodeApp
+    from codeharbor.app import CodeHarborApp
     from codeharbor.driver import NoAltScreenDriver
 
-    app = MewCodeApp(
+    app = CodeHarborApp(
         providers=config.providers,
         permission_mode=permission_mode,
         mcp_servers=config.mcp_servers,

@@ -51,9 +51,11 @@ def get_auto_mem_path(project_root: str) -> str:
     """返回项目级记忆目录路径：<projectRoot>/.codeharbor/memory/。
 
     保留尾部分隔符，确保前缀匹配不会误命中类似 memoryxyz 的路径。
-    支持 MEWCODE_REMOTE_MEMORY_DIR 环境变量覆盖。
+    支持 CODEHARBOR_REMOTE_MEMORY_DIR 环境变量覆盖。旧变量名仅作兼容回退。
     """
-    override = os.environ.get("MEWCODE_REMOTE_MEMORY_DIR", "")
+    override = os.environ.get("CODEHARBOR_REMOTE_MEMORY_DIR", "")
+    if not override:
+        override = os.environ.get("MEWCODE_REMOTE_MEMORY_DIR", "")
     if override:
         return override.rstrip(os.sep) + os.sep
     abs_root = os.path.abspath(project_root)

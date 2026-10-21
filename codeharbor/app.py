@@ -4,7 +4,7 @@
 # 简历模版：jianli.xiaolinnote.com
 from __future__ import annotations
 
-from codeharbor.branding import DATA_DIR_NAME
+from codeharbor.branding import DATA_DIR_NAME, PRODUCT_NAME, PRODUCT_VERSION
 
 import asyncio
 import os
@@ -569,21 +569,23 @@ class SubAgentBlock(Static, can_focus=True):
         self._render_done()
 
 
-_MEWCODE_THEME = Theme(
-    name="mewcode",
-    primary="#875FFF",
-    background="#1a1a1a",
-    surface="#1a1a1a",
-    panel="#1a1a1a",
+_CODEHARBOR_THEME = Theme(
+    name="codeharbor",
+    primary="#2DD4BF",
+    secondary="#F5B94C",
+    warning="#F5B94C",
+    background="#061826",
+    surface="#0B2538",
+    panel="#0E2D42",
     dark=True,
 )
 
 
-class MewCodeApp(App):
+class CodeHarborApp(App):
     CSS_PATH = "styles.tcss"
-    TITLE = "MewCode"
+    TITLE = PRODUCT_NAME
     INLINE_PADDING = 0
-    theme = "mewcode"
+    theme = "codeharbor"
     BINDINGS = [
         Binding("ctrl+c", "handle_ctrl_c", "Quit", priority=True),
         Binding("escape", "cancel", "Cancel", priority=True),
@@ -664,11 +666,11 @@ class MewCodeApp(App):
     @staticmethod
     def _make_banner(model: str = "", work_dir: str = "") -> RichText:
         t = RichText()
-        t.append(" /\\_/\\    ", style="bold color(99)")
-        t.append("MewCode v0.1.0\n", style="color(242)")
-        t.append("( o.o )   ", style="bold color(99)")
+        t.append("   ◢█◣    ", style="bold #F5B94C")
+        t.append(f"{PRODUCT_NAME} v{PRODUCT_VERSION}\n", style="bold #2DD4BF")
+        t.append("   ║║     ", style="bold #F5B94C")
         t.append(f"{model}\n" if model else "\n", style="color(242)")
-        t.append(" > ^ <    ", style="bold color(99)")
+        t.append(" ≋═╩═≋    ", style="bold #2DD4BF")
         t.append(work_dir, style="color(242)")
         return t
 
@@ -695,8 +697,8 @@ class MewCodeApp(App):
             yield CompletionPopup()
 
     def on_mount(self) -> None:
-        self.register_theme(_MEWCODE_THEME)
-        self.theme = "mewcode"
+        self.register_theme(_CODEHARBOR_THEME)
+        self.theme = "codeharbor"
         if len(self.providers) == 1:
             self._select_provider(self.providers[0])
         else:

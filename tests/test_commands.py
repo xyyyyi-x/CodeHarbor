@@ -370,7 +370,8 @@ class TestStatusHandler:
         ctx.memory_manager.load.return_value = ""
 
         await handle_status(ctx)
-        assert "MewCode 状态" in ui.messages[0]
+        assert "CodeHarbor 状态" in ui.messages[0]
+        assert "版本: v0.2.0" in ui.messages[0]
         assert "default" in ui.messages[0]
 
 class TestSessionHandler:

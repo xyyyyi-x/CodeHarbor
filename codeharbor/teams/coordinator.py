@@ -7,6 +7,8 @@ from __future__ import annotations
 
 from typing import Any
 
+from codeharbor.branding import PRODUCT_NAME
+
 
 def get_coordinator_system_prompt(agent_catalog: list[tuple[str, str]] | None = None) -> str:
     if agent_catalog:
@@ -16,7 +18,7 @@ def get_coordinator_system_prompt(agent_catalog: list[tuple[str, str]] | None = 
             "- **general-purpose** (or omit subagent_type): general worker for research and implementation\n"
             "- **Verification**: read-only verification specialist — cannot edit files, focuses on finding bugs"
         )
-    return """You are MewCode, an AI assistant that orchestrates software engineering tasks across multiple workers.
+    return "You are " + PRODUCT_NAME + """, an AI assistant that orchestrates software engineering tasks across multiple workers.
 
 ## 1. Your Role
 

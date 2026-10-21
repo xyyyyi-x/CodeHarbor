@@ -162,10 +162,13 @@ def load_instructions(project_root: str) -> str:
     """发现并拼接项目和用户指令文件。
 
     发现顺序（低优先级在前，高优先级在后）：
-    1. 用户全局：~/.codeharbor/MEWCODE.md, ~/.codeharbor/AGENTS.md
-    2. 项目目录链：从 git root 到 workDir，每个目录的 MEWCODE.md 和 AGENTS.md
+    1. 用户全局：~/.codeharbor/CODEHARBOR.md, ~/.codeharbor/AGENTS.md
+    2. 项目目录链：从 git root 到 workDir，每个目录的 CODEHARBOR.md 和 AGENTS.md
     3. workDir/.codeharbor/INSTRUCTIONS.md（遗留格式）
-    4. workDir/MEWCODE.local.md（本地覆盖）
+    4. workDir/CODEHARBOR.local.md（本地覆盖）
+
+    每一层仅在新文件名不存在时读取旧 MEWCODE 文件名，保证迁移后的品牌
+    优先，同时不让已有项目静默丢失指令。
     """
     root = Path(project_root).resolve()
     home = Path.home()
@@ -199,20 +202,29 @@ def load_instructions(project_root: str) -> str:
             label = abs_str
         sources.append((label, content.rstrip("\n")))
 
+    def _add_current_or_legacy(current: Path, legacy: Path) -> None:
+        _add(current if current.is_file() else legacy)
+
     # 1. 用户全局
-    _add(home / DATA_DIR_NAME / "MEWCODE.md")
+    _add_current_or_legacy(
+        home / DATA_DIR_NAME / "CODEHARBOR.md",
+        home / DATA_DIR_NAME / "MEWCODE.md",
+    )
     _add(home / DATA_DIR_NAME / "AGENTS.md")
 
     # 2. 项目目录链
     for d in _project_instruction_dirs(root):
-        _add(d / "MEWCODE.md")
+        _add_current_or_legacy(d / "CODEHARBOR.md", d / "MEWCODE.md")
         _add(d / "AGENTS.md")
 
     # 3. 遗留格式
     _add(root / DATA_DIR_NAME / "INSTRUCTIONS.md")
 
     # 4. 本地覆盖
-    _add(root / "MEWCODE.local.md")
+    _add_current_or_legacy(
+        root / "CODEHARBOR.local.md",
+        root / "MEWCODE.local.md",
+    )
 
     if not sources:
         return ""

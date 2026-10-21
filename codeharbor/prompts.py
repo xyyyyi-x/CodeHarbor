@@ -2,7 +2,7 @@
 # 后端八股网站：xiaolincoding.com
 # Agent网站：xiaolinnote.com
 # 简历模版：jianli.xiaolinnote.com
-"""MewCode 的系统提示词（system prompt）构建。"""
+"""CodeHarbor 的系统提示词（system prompt）构建。"""
 
 from __future__ import annotations
 
@@ -11,6 +11,8 @@ import platform
 import subprocess
 from dataclasses import dataclass
 from datetime import datetime
+
+from codeharbor.branding import PRODUCT_NAME
 
 
 @dataclass
@@ -57,7 +59,7 @@ IDENTITY_SECTION = PromptSection(
     name="Identity",
     priority=0,
     content=(
-        "You are MewCode, an AI programming assistant running in the terminal. "
+        f"You are {PRODUCT_NAME}, an AI programming assistant running in the terminal. "
         "You help users with software engineering tasks including writing code, "
         "debugging, refactoring, explaining code, and running commands.\n\n"
         "IMPORTANT: Be careful not to introduce security vulnerabilities such as "
